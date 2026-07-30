@@ -1,10 +1,14 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from qdrant_client.models import (
+    VectorParams,
+    Distance,
+    PointStruct
+)
 
 from app.config import (
     QDRANT_HOST,
     QDRANT_PORT,
-    COLLECTION_NAME,
+    QDRANT_COLLECTION
 )
 
 
@@ -12,12 +16,14 @@ class QdrantManager:
 
     def __init__(self):
 
+        print("Connecting to Qdrant...")
+
         self.client = QdrantClient(
             host=QDRANT_HOST,
             port=QDRANT_PORT
         )
 
-        print("Connected to Qdrant Successfully.")
+        print("Connected Successfully.")
 
     def create_collection(self):
 
@@ -25,24 +31,21 @@ class QdrantManager:
 
         collection_names = [c.name for c in collections]
 
-        if COLLECTION_NAME in collection_names:
+        if QDRANT_COLLECTION not in collection_names:
 
-            print(f"Collection '{COLLECTION_NAME}' already exists.")
-
-            return
-
-        self.client.create_collection(
-
-            collection_name=COLLECTION_NAME,
-
-            vectors_config=VectorParams(
-                size=768,
-                distance=Distance.COSINE
+            self.client.create_collection(
+                collection_name=QDRANT_COLLECTION,
+                vectors_config=VectorParams(
+                    size=384,
+                    distance=Distance.COSINE
+                )
             )
 
-        )
+            print(f"Collection '{QDRANT_COLLECTION}' Created.")
 
-        print(f"Collection '{COLLECTION_NAME}' created successfully.")
+        else:
+
+            print(f"Collection '{QDRANT_COLLECTION}' Already Exists.")
 
     def store_embeddings(self, embedded_chunks):
 
@@ -53,53 +56,33 @@ class QdrantManager:
             points.append(
 
                 PointStruct(
-
                     id=idx,
-
                     vector=chunk["embedding"],
-
                     payload={
-
                         "document": chunk["document"],
-
                         "page": chunk["page"],
-
                         "chunk": chunk["chunk"],
-
                         "text": chunk["text"]
-
                     }
-
                 )
 
             )
 
         self.client.upsert(
-
-            collection_name=COLLECTION_NAME,
-
-            points=points,
-
-            wait=True
-
+            collection_name=QDRANT_COLLECTION,
+            points=points
         )
 
-        print(f"{len(points)} vectors stored successfully.")
+        print(f"{len(points)} embeddings stored successfully.")
 
-    def search(self, query_vector, top_k=20):
+    def search(self, query_vector, top_k):
 
-        results = self.client.query_points(
-
-            collection_name=COLLECTION_NAME,
-
+        response = self.client.query_points(
+            collection_name=QDRANT_COLLECTION,
             query=query_vector,
-
             limit=top_k,
-
             with_payload=True,
-
             with_vectors=False
-
         )
 
-        return results.points
+        return response.points
