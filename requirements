@@ -1,0 +1,1 @@
+pip install pymupdf sentence-transformers qdrant-client openai python-dotenv tiktoken fastapi uvicorn pydantic
