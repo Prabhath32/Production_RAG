@@ -15,6 +15,12 @@ class EmbeddingGenerator:
 
         self.model = SentenceTransformer(EMBEDDING_MODEL)
 
+        self.embedding_dimension = (
+            self.model.get_sentence_embedding_dimension()
+        )
+
+        print(f"Embedding Dimension : {self.embedding_dimension}")
+
         print("Embedding Model Loaded Successfully.\n")
 
     def generate_embeddings(self, chunks):

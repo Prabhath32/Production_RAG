@@ -1,6 +1,10 @@
 from sentence_transformers import SentenceTransformer
 
-from app.config import TOP_K
+from app.config import (
+    EMBEDDING_MODEL,
+    TOP_K
+)
+
 from app.vectordb.qdrant_db import QdrantManager
 
 
@@ -8,20 +12,23 @@ class Retriever:
 
     def __init__(self):
 
-        print("Loading Embedding Model...")
+        print(f"\nLoading Embedding Model: {EMBEDDING_MODEL}")
 
         self.embedding_model = SentenceTransformer(
-            "BAAI/bge-small-en-v1.5"
+            EMBEDDING_MODEL
         )
 
-        print("Embedding Model Loaded")
+        self.embedding_dimension = (
+            self.embedding_model.get_sentence_embedding_dimension()
+        )
+
+        print(f"Embedding Dimension : {self.embedding_dimension}")
+
+        print("Embedding Model Loaded Successfully.\n")
 
         self.qdrant = QdrantManager()
 
-    def retrieve(
-        self,
-        question: str
-    ):
+    def retrieve(self, question: str):
 
         print("\nGenerating Query Embedding...")
 
@@ -33,11 +40,8 @@ class Retriever:
         print("Searching Qdrant...")
 
         results = self.qdrant.search(
-
             query_vector=query_vector,
-
             top_k=TOP_K
-
         )
 
         return results
